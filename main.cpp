@@ -107,10 +107,10 @@ int main(int argc, char** argv) {
 				long double x_term = pow(TAKE_AT_X, i-nth_derivative);
 				debug("term " << i << ": " << derivatives[i] << "*" << a_coeff << "*x^(" << (i-nth_derivative) << ") = " << (a_coeff * x_term * derivatives[i]));
 				n_val += a_coeff * x_term * derivatives[i];
-				for(int o = -20; o < 20; o++) {
+				/*for(int o = -20; o < 20; o++) {
 					std::cout << "(" << (o/4.0) << ", " << (pow(TAKE_AT_X + o/4.0, i-nth_derivative)*derivatives[i]*a_coeff) << "), ";
 				}
-				return 0;
+				return 0;*/
 			}
 			std::cout << "(" << (point + TAKE_AT_X) << ", " << n_val << ")";
 			if(num_pts_computed == num_points_out-1) std::cout << std::endl;
