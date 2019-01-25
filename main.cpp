@@ -1,6 +1,8 @@
 #include <iostream>
 #include <interpreter.h>
 #include <lexer.h>
+#include <iomanip>
+#include <limits>
 #include <cmath>
 
 #define DELTA_X 0.0001
@@ -23,9 +25,10 @@ int main(int argc, char** argv) {
 	std::string func;
 	getline(std::cin, func);
 	long double nth_derivative = -1;
-	while(nth_derivative <= 0 || nth_derivative > 2) {
-		std::cout << "Enter the nth derivative you want to take (0 < n <= 2): ";
+	while(nth_derivative <= 0 || nth_derivative > 1) {
+		std::cout << "Enter the nth derivative you want to take (0 < n <= 1), or -1 to display Taylor series: ";
 		std::cin >> nth_derivative;
+		if(nth_derivative == -1) break;
 	}
 	std::cout << "Enter the x-coordinate at which to start: ";
 	long double start_point;
@@ -47,6 +50,10 @@ int main(int argc, char** argv) {
 	interpreter inter;
 	inter.fetch_tokens(lex);
 
+	//Pick display settings
+	std::cout << std::fixed;
+	std::cout << std::setprecision(std::numeric_limits<long double>::digits10 + 1);
+
 	//Assign variables
 	std::unordered_map<std::string, long double> vars;
 	vars["pi"] = 3.14159265359;
@@ -56,7 +63,7 @@ int main(int argc, char** argv) {
 	long double derivatives[num_taylor_terms];
 
 	for(int num_pts_computed = 0; num_pts_computed < num_points_out; num_pts_computed++) {
-		long double point = start_point - TAKE_AT_X + num_pts_computed * btw_point_delta;
+		long double point = start_point - (nth_derivative == -1 ? 0 : TAKE_AT_X) + num_pts_computed * btw_point_delta;
 		for(int i = 0; i < num_taylor_terms+1; i++) {
 			vars["x"] = point + DELTA_X * i;
 			long double temp = inter.interpret(vars);
@@ -85,15 +92,29 @@ int main(int argc, char** argv) {
 			//std::cout << "derivative[" << i << "] = " << derivatives[i] << std::endl;
 		}
 
-		long double n_val = 0;
-		for(int i = 0; i < num_taylor_terms; i++) {
-			//long double t_coeff = 1 / std::tgamma(i+2);
-			//long double nd_coeff = std::tgamma(i+2)/std::tgamma(i+2-nth_derivative);
-			long double a_coeff = (i+1-nth_derivative) <= 0 ? 0 : 1/std::tgamma(i+1-nth_derivative);
-			long double x_term = (a_coeff == 0) ? 0 : pow(TAKE_AT_X, i-nth_derivative);
-			debug("term " << i << ": " << derivatives[i] << "*" << a_coeff << "*x^" << (i+0-nth_derivative) << " = " << (a_coeff * x_term * derivatives[i]));
-			n_val += a_coeff * x_term * derivatives[i];
+		if(nth_derivative == -1) {
+			for(int i = 0; i < num_taylor_terms; i++) {
+				long double coeff = 1/std::tgamma(i+1);
+				std::cout << (derivatives[i] * coeff) << "*(x" << (point < 0 ? "+" : "-") << (point < 0 ? -point : point) << ")^" << i << (i == num_taylor_terms-1 ? "" : " + ");
+			}
+			std::cout << std::endl;
+		} else {
+			long double n_val = 0;
+			for(int i = 0; i < num_taylor_terms; i++) {
+				//long double t_coeff = 1 / std::tgamma(i+2);
+				//long double nd_coeff = std::tgamma(i+2)/std::tgamma(i+2-nth_derivative);
+				long double a_coeff = 1/std::tgamma(i+1-nth_derivative);
+				long double x_term = pow(TAKE_AT_X, i-nth_derivative);
+				debug("term " << i << ": " << derivatives[i] << "*" << a_coeff << "*x^(" << (i-nth_derivative) << ") = " << (a_coeff * x_term * derivatives[i]));
+				n_val += a_coeff * x_term * derivatives[i];
+				for(int o = -20; o < 20; o++) {
+					std::cout << "(" << (o/4.0) << ", " << (pow(TAKE_AT_X + o/4.0, i-nth_derivative)*derivatives[i]*a_coeff) << "), ";
+				}
+				return 0;
+			}
+			std::cout << "(" << (point + TAKE_AT_X) << ", " << n_val << ")";
+			if(num_pts_computed == num_points_out-1) std::cout << std::endl;
+			else std::cout << ", ";
 		}
-		std::cout << "(" << (point + TAKE_AT_X) << ", " << n_val << "), ";
 	}
 }
